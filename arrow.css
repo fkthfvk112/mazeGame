@@ -1,36 +1,39 @@
 #arrowContainer{
     display: none;
     position: fixed;
-    bottom: 10em;
+    width:50em;
+    bottom: 15%;
     left: 50%;
     transform: translateX(-50%);
 }
 
 #arrowContainer button{
-    height: 3em;
     opacity: 45%;
 }
 
 .leftBtn{
-    margin-right: 1.8em;
-    width:3.5em;
+    margin-right: 3em;
+    width:6em;
+    height:5em;
+
 }
 
 .rightBtn{
-    margin-left: 1.8em;
-    width:3.5em;
+    margin-left: 3em;
+    height:5em;
+    width:6em;
 }
 
 .upBtn{
     margin-bottom: 0.5em;
-    height: 4em;
-    width: 3em;
+    height: 5em;
+    width: 6em;
 }
 
 .downBtn{
     margin-top: 0.5em;
-    height: 4em;
-    width: 3em;
+    height: 5em;
+    width: 6em;
 }
 
 @media screen and (max-width: 700px) {
