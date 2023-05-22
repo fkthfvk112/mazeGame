@@ -1,0 +1,40 @@
+#arrowContainer{
+    display: none;
+    position: fixed;
+    bottom: 10em;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#arrowContainer button{
+    height: 3em;
+    opacity: 45%;
+}
+
+.leftBtn{
+    margin-right: 1.8em;
+    width:3.5em;
+}
+
+.rightBtn{
+    margin-left: 1.8em;
+    width:3.5em;
+}
+
+.upBtn{
+    margin-bottom: 0.5em;
+    height: 4em;
+    width: 3em;
+}
+
+.downBtn{
+    margin-top: 0.5em;
+    height: 4em;
+    width: 3em;
+}
+
+@media screen and (max-width: 700px) {
+    #arrowContainer{
+        display:inline-block;
+    }
+}

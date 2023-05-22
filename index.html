@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <div id="timer">00:00:00</div>
+        <select name="" id="sizeSelection">
+            <option value="10">extra-small</option>
+            <option value="30">small</option>
+            <option value="47">medium</option>
+            <option value="82">large</option>
+            <option value="111">extra-large</option>
+            <option value="163">super-extra-large</option>
+        </select>
+        <button class="setMazeBtn">Set maze</button>
+    </div>
+    <canvas class="canvas no-scroll">
+        cavas
+    </canvas>
+    <div class="goal"></div>
+    <div id="arrowContainer">
+        <button class="upBtn">↑</button>
+        <div>
+            <button class="leftBtn">←</button>
+            <button class="rightBtn">→</button> 
+        </div>
+        <button class="downBtn">↓</button>
+    </div>
+</body>
+<link rel="stylesheet" href="maze.css" />
+<link rel="stylesheet" href="arrow.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script  src="jquery-ui.min.js"></script>
+
+<script src="./mobileKey.js"></script>
+</html>
+
+<script>
+    let goalContext;
+    $(document).ready(()=>{
+
+        var canvasSize = parseInt(Math.min(window.innerWidth, window.innerHeight)*90/100)
+
+        $('div').attr('height', '1vw')
+        $('.canvas').attr('height', canvasSize).attr('width', canvasSize);
+    //---------prevent Scroll
+
+    // 방향키 이벤트를 처리하는 함수
+    function preventScroll(event) {
+        var keys = {
+            37: 1, 38: 1, 39: 1, 40: 1  // 방향키에 해당하는 keyCode 값
+        };
+        if (keys[event.keyCode]) {
+            event.preventDefault();  // 스크롤 기본 동작 막기
+        }
+        }
+
+        // 문서 전체에 이벤트 리스너 등록
+        document.addEventListener('keydown', preventScroll, false);
+
+    //-----------------------------
+    //열 행 개수 지정
+
+        
+        let mazeRowCnt = 10;
+        let mazeColCnt = 10;
+        let emptyMap;
+        function formatTime(date) {
+            let seconds = date % 60;
+            let minutes = Math.floor(date / 60) % 60;
+            let hours = Math.floor(date / 3600);
+
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+
+        return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+        }
+
+
+        const setTimer = ()=>{
+            let count = 0;
+            let intervalId = setInterval(async function() {
+                count++;
+                const date = Date.now();
+                let time =  formatTime(count);
+                console.log(time);
+                $("#timer").text(time);
+            }, 1000);
+
+            return intervalId
+        }
+        
+        let interValId
+        $('.setMazeBtn').on('click', ()=>{
+            interValId&&clearInterval(interValId);
+            interValId = setTimer();
+            const context = $('canvas')[0].getContext('2d');
+            $('.canvas').css('display', 'inline-block');
+            context.clearRect(0, 0, 1000, 1000);
+            context.fillStyle = 'black'
+            let mazeCnt = parseInt($('#sizeSelection').val());
+            mazeRowCnt = mazeCnt;
+            mazeColCnt = mazeCnt;
+            emptyMap = new Array(mazeRowCnt);
+
+            for(i = 0; i < mazeRowCnt; i++){
+                emptyMap[i] = new Array(mazeColCnt);
+                }
+            for(let i = 0; i < mazeRowCnt; i++){
+                for(let j = 0; j < mazeColCnt; j++){
+                    emptyMap[i][j] = 1;
+                }
+             }
+
+            $('.goal').removeClass('goalComplete');
+            $('.goal').html('');
+
+            runMazeGame();
+        })
+
+    //----------------------------
+
+        const dx = [1, -1, 0, 0]
+        const dy = [0, 0, 1, -1]
+        const directions = [0, 1, 2, 3];//우 좌 하 상
+
+        function shuffleArray(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+
+        //console.log('잉', emptyMap);
+
+        function isValidMazeIndex(row, col){
+            return row >=0 && row < mazeRowCnt && col >=0 && col < mazeColCnt
+        }
+
+        function makeMaze(row, col){
+            emptyMap[row][col] = 0;
+            shuffleArray(directions);
+            for(let direction of directions){
+                let nextRow = row + dx[direction];
+                let nextCol = col + dy[direction];
+
+                let boundaryCon = isValidMazeIndex(nextRow, nextCol);
+                let visitCon = boundaryCon&&emptyMap[nextRow][nextCol] === 1;
+                let noNearCon = true;
+                switch(direction){
+                    case 0://우// 좌 제외 전부 확인
+                        noNearCon = 
+                            isValidMazeIndex(nextRow+1, nextCol)&&emptyMap[nextRow+1][nextCol] !==0 &&
+                            isValidMazeIndex(nextRow, nextCol+1)&&emptyMap[nextRow][nextCol+1] !==0 &&
+                            isValidMazeIndex(nextRow, nextCol-1)&&emptyMap[nextRow][nextCol-1] !==0;
+                        break;
+                    case 1://좌 //우제외 전부 화인
+                        noNearCon = 
+                                isValidMazeIndex(nextRow-1, nextCol)&&emptyMap[nextRow-1][nextCol] !==0 &&
+                                isValidMazeIndex(nextRow, nextCol+1)&&emptyMap[nextRow][nextCol+1] !==0 &&
+                                isValidMazeIndex(nextRow, nextCol-1)&&emptyMap[nextRow][nextCol-1] !==0;
+                        break;
+                    case 2://하 //상 제외 
+                        noNearCon = 
+                                isValidMazeIndex(nextRow+1, nextCol)&&emptyMap[nextRow+1][nextCol] !==0 &&
+                                isValidMazeIndex(nextRow, nextCol+1)&&emptyMap[nextRow][nextCol+1] !==0 &&
+                                isValidMazeIndex(nextRow-1, nextCol)&&emptyMap[nextRow-1][nextCol] !==0; 
+                        break;
+                    case 3://상 //하 제외
+                        noNearCon = 
+                                isValidMazeIndex(nextRow+1, nextCol)&&emptyMap[nextRow+1][nextCol] !==0 &&
+                                isValidMazeIndex(nextRow-1, nextCol)&&emptyMap[nextRow-1][nextCol] !==0 &&
+                                isValidMazeIndex(nextRow, nextCol-1)&&emptyMap[nextRow][nextCol-1] !==0;
+                        break;
+                }
+                if(boundaryCon && visitCon&&noNearCon){
+                    makeMaze(nextRow, nextCol);
+                }
+            }
+        }
+
+
+        //-------------------------------------------------------------------------------------------------------------------------------
+        //const c1 = new Character(context, 20, 10, 10);
+
+        
+        function makeMazeInCanvas(emptyMap, context){
+            const wallArr = new Array();
+            const canvasWith = $('canvas').attr('width');
+            let goalObj;
+            const wallSize = Math.floor( parseInt(canvasWith)/mazeRowCnt);
+            for(let i = 0; i < mazeRowCnt; i++){
+                for(let j = 0; j < mazeColCnt; j++){
+                    if(emptyMap[i][j] === 1){
+                        wallArr.push(new Object(context, wallSize, wallSize*i, wallSize*j));
+                        //console.log('i', wallSize*i," ",'j',wallSize*j)
+                    }
+                    if(emptyMap[i][j] === 8){
+                        goalObj = new Goal(context, wallSize, wallSize*i, wallSize*j);
+                        wallArr.push(goalObj);
+                    }
+                }
+            }
+            console.log('아임 월', wallArr)
+            return {allArr:wallArr, goalObj:goalObj};
+        }
+        
+        //---------------------------------------------------
+        class Object{
+            locationX;
+            locationY;
+            size;
+            context;
+            constructor(context, size, locationX, locationY){
+                this.context = context;
+                this.size = size;
+                this.locationX = locationX;
+                this.locationY = locationY;
+                this.context.fillRect(locationX, locationY, size, size);
+                console.log("오브제");
+            }
+        }
+
+        class Character extends Object{
+            moveRight(dis){
+                this.locationX +=dis;
+            }
+            moveLeft(dis){
+                this.locationX -=dis;
+            }
+            moveTop(dis){
+                this.locationY -=dis;
+            }
+            moveDown(dis){
+                this.locationY +=dis;
+            }
+
+
+            isCrush(obstacles) {
+                for(let obstacle of obstacles){
+                    if(obstacle instanceof Character) continue;
+                    if(obstacle instanceof Goal) continue;
+                    let con =
+                    obstacle.locationX < this.locationX + this.size 
+                    &&
+                    obstacle.locationX + obstacle.size > this.locationX
+                    &&
+                    obstacle.locationY < this.locationY+this.size
+                    &&
+                    obstacle.locationY+obstacle.size > this.locationY;
+
+                    if(con) return true;
+                }
+
+                return false;
+            }
+
+        }
+
+
+        class Goal extends Object{
+            constructor(context, size, locationX, locationY, color){
+                super(context, size, locationX, locationY);
+                this.context.fillStyle = this.color;
+            }
+
+            isGoal(userChar){
+                return userChar.locationX === this.locationX && userChar.locationY === this.locationY;
+            }
+        }
+
+        const reDraw= (arr, context)=>{
+            context.clearRect(0, 0, 1000, 1000);
+
+            let character = {
+                x:Number,
+                y:Number,
+                size:Number
+            }
+
+            let goal = {
+                x:Number,
+                y:Number,
+                size:Number
+            }
+
+            arr.forEach((ele)=>{
+                if(ele instanceof Character){
+                    character.x = ele.locationX;
+                    character.y = ele.locationY;
+                    character.size = ele.size;
+                }
+
+                if(ele instanceof Goal){
+                    goal.x = ele.locationX;
+                    goal.y = ele.locationY;
+                    goal.size = ele.size;
+                }
+                context.fillStyle = "gray";
+                context.fillRect(ele.locationX, ele.locationY, ele.size, ele.size);
+            })
+            context.fillStyle = "blue";
+            context.fillRect(character.x, character.y, character.size, character.size);
+
+            context.fillStyle = "red";
+            context.fillRect(goal.x, goal.y, goal.size, goal.size);
+
+    }
+
+
+    //----------------------------------
+
+    function runMazeGame(){
+        makeMaze(1, 1);
+        while(1){
+            if(emptyMap[mazeRowCnt-3][mazeColCnt-2] === 0 ||
+            emptyMap[mazeRowCnt-2][mazeColCnt-3] === 0) break;
+            for(i = 0; i < mazeRowCnt; i++){
+                emptyMap[i] = new Array(mazeColCnt);
+                }
+            for(let i = 0; i < mazeRowCnt; i++){
+                for(let j = 0; j < mazeColCnt; j++){
+                    emptyMap[i][j] = 1;
+                }
+             }
+            makeMaze(1, 1);
+        }
+        emptyMap[mazeRowCnt-2][mazeColCnt-2] = 8;
+        
+        console.log("여기");
+        const canvasWith = $('canvas').attr('width');
+        const wallSize = Math.floor(parseInt(canvasWith)/mazeRowCnt);
+
+        const context = $('canvas')[0].getContext('2d');
+        const c1 = new Character(context, wallSize, wallSize, wallSize);
+        const arrCharacters = [];
+        arrCharacters.push(c1);
+        let {allArr, goalObj} = makeMazeInCanvas(emptyMap, context);
+        console.log("골오브제", goalObj);
+        allArr.forEach((ele)=>{
+            arrCharacters.push(ele);
+        })
+
+        $(document).keydown((evt)=>{
+            if(evt.key ==="ArrowRight"){
+                const tempChracter = new Character(context, c1.size, c1.locationX+wallSize, c1.locationY);
+                if(!tempChracter.isCrush(arrCharacters)){
+                    c1.moveRight(wallSize);
+                }
+
+            }
+            if(evt.key ==="ArrowLeft"){
+                const tempChracter = new Character(context, c1.size, c1.locationX-wallSize, c1.locationY);
+                if(!tempChracter.isCrush(arrCharacters)){
+                    c1.moveLeft(wallSize);
+                }
+
+            }
+            if(evt.key ==="ArrowUp"){
+                const tempChracter = new Character(context, c1.size, c1.locationX, c1.locationY-wallSize);
+                if(!tempChracter.isCrush(arrCharacters)){
+                    c1.moveTop(wallSize);
+                }
+
+            }
+            if(evt.key ==="ArrowDown"){
+                const tempChracter = new Character(context, c1.size, c1.locationX, c1.locationY+wallSize);
+                if(!tempChracter.isCrush(arrCharacters)){
+                    c1.moveDown(wallSize);
+                }
+
+            }
+            
+            if(goalObj.isGoal(c1)){
+                    $('.goal').html('Goal!!!').addClass('goalComplete', 800, "linear");
+                    $(document).off('keydown');
+                    clearInterval(interValId);
+                }
+            reDraw(arrCharacters, context);
+        })
+    }
+    })
+</script>
+<style>
+    body{
+        text-align: center;
+    }
+    .canvasRow{
+        display: block;
+    }
+    .canvas{
+        border: 1px solid black;
+        margin-top: 0;
+        max-width: 700px;
+        max-height: 700px;
+    }
+
+    .goalMark{
+        position:relative;
+        z-index: 1;
+        text-align: start;
+        background-color: red;
+    }
+
+    .no-scroll {
+      overflow: hidden;
+    }
+    
+</style>

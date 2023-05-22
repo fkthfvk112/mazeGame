@@ -1,0 +1,29 @@
+.setMazeBtn{
+    width:8em;
+    background-color: white;
+    border-radius: 10px;
+    margin-bottom: 1em;
+    transition: 0.2s ease;
+}
+
+.setMazeBtn:hover{
+    background-color: yellow;
+}
+.goal{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+}
+.goalComplete{
+    position: fixed;
+    font-size: 6em;
+    font-weight: 700;
+    color:yellow;
+    text-shadow:2px 2px 2px #000;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
