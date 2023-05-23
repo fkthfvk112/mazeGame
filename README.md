@@ -6,5 +6,5 @@
     <li>JQuery 사용</li>
   <li>실제 구현에의 알고리즘 적용</li>
 </ul>
-https://fkthfvk112.github.io/mazeGame/
 <p>미로 생성에는 백트래킹 알고리즘을 적용하여 미로를 생성하였다. 미로의 각 칸은 객체로 구현하였다.</p>
+https://fkthfvk112.github.io/mazeGame/
